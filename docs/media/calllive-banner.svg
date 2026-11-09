@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 270" role="img" aria-labelledby="title desc">
+  <title id="title">CallLive</title>
+  <desc id="desc">FreePBX call monitor showing two channels connected by a quality chart.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#102b40"/>
+      <stop offset="1" stop-color="#194b55"/>
+    </linearGradient>
+    <linearGradient id="wave" x2="1" y2="0">
+      <stop stop-color="#61d2c1"/>
+      <stop offset="1" stop-color="#bceee3"/>
+    </linearGradient>
+    <pattern id="grid" width="27" height="27" patternUnits="userSpaceOnUse">
+      <path d="M27 0H0v27" fill="none" stroke="#d1ecee" opacity=".13"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="270" rx="20" fill="url(#bg)"/>
+  <g font-family="system-ui, DejaVu Sans, sans-serif">
+    <text x="49" y="51" fill="#bceee3" font-size="14" font-weight="700" letter-spacing="2.8">FREEPBX · ASTERISK</text>
+    <text x="47" y="118" fill="#fff" font-size="66" font-weight="750" letter-spacing="-2">CallLive</text>
+    <text x="51" y="158" fill="#eff9fa" font-size="25" font-weight="600">Call Monitor</text>
+    <text x="51" y="188" fill="#c3dfe6" font-size="18">Live calls, trunk activity and call quality</text>
+    <g font-size="12" font-weight="650" letter-spacing=".7" fill="#d9f2ef">
+      <rect x="50" y="211" width="104" height="28" rx="7" fill="#ffffff" fill-opacity=".09" stroke="#9ad6d2" stroke-opacity=".32"/>
+      <text x="64" y="230">FREEPBX 15</text>
+      <rect x="164" y="211" width="118" height="28" rx="7" fill="#ffffff" fill-opacity=".09" stroke="#9ad6d2" stroke-opacity=".32"/>
+      <text x="178" y="230">PYTHON 3.6+</text>
+      <rect x="292" y="211" width="96" height="28" rx="7" fill="#ffffff" fill-opacity=".09" stroke="#9ad6d2" stroke-opacity=".32"/>
+      <text x="307" y="230">RTP / RTCP</text>
+    </g>
+  </g>
+  <rect x="614" y="32" width="575" height="206" rx="15" fill="#071d2e" fill-opacity=".21" stroke="#84bbbc" stroke-opacity=".43"/>
+  <rect x="631" y="49" width="541" height="172" rx="9" fill="url(#grid)"/>
+  <path d="M686 137H776l18-17 16 29 21-61 21 82 20-53 20 20h230" fill="none" stroke="url(#wave)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="685" cy="137" r="15" fill="#1d5f64" stroke="#85d6ce" stroke-width="2"/>
+  <circle cx="685" cy="137" r="5" fill="#bceee3"/>
+  <circle cx="1122" cy="137" r="15" fill="#1d5f64" stroke="#85d6ce" stroke-width="2"/>
+  <circle cx="1122" cy="137" r="5" fill="#bceee3"/>
+  <path d="M958 63v144" stroke="#bbdeda" stroke-dasharray="4 5" opacity=".68"/>
+  <circle cx="958" cy="137" r="5.5" fill="#d6f6ef"/>
+  <g font-family="system-ui, DejaVu Sans, sans-serif" fill="#badfdf" font-size="12" font-weight="650" letter-spacing="1.35">
+    <text x="660" y="78">CHANNEL A</text>
+    <text x="1144" y="78" text-anchor="end">CHANNEL B</text>
+    <text x="958" y="199" text-anchor="middle">CALL EVENT</text>
+  </g>
+</svg>

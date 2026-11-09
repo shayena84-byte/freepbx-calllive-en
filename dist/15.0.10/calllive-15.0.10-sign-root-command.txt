@@ -1,0 +1,228 @@
+php -f /dev/stdin <<'CALLLIVE_SIGN_1510'
+<?php
+/**
+ * Local signature for CallLive 15.0.10 on FreePBX 15.
+ * Run as root on the PBX with php /root/calllive-15.0.10-sign-local.php
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+if (!function_exists('posix_geteuid') || posix_geteuid() !== 0) {
+    fwrite(STDERR, "Run this script as root on the FreePBX server.\n");
+    exit(1);
+}
+
+// SHA-256 checksums of the published CallLive 15.0.10 archive.
+$expected = array(
+    'Calllive.class.php' => '1a83db56d677e1d4bd7b31c24ceb714c0e9ded2414a3acbcae2e293f8f037a00',
+    'LICENSE' => '3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986',
+    'README.md' => '955075f3c009f953b650a63efb5bb76d41ac64f19cccc8eabd25a08547f36453',
+    'assets/css/calllive.css' => '4ec3eb69c839f9e86d90d16131695af6100292b5e944364cc0cbb54ecf1292eb',
+    'assets/js/calllive.js' => '430ae0853b7e957d61c38a5950147920b6bb43b79d10c5814b899f70a71c0b63',
+    'deploy/collector.py' => '7a783a6d34a071bb8d07dd016916a3f79161716acf77a0b293597612d291b454',
+    'deploy/files.sha256' => '0e2a71ac26a1e8c19bea3de28744630673ea8a0cf0e896ab0c6ce32f044e6873',
+    'deploy/freepbx-calllive.service' => '240a113d216d8fa079b23c77eebca8bc81264f693df4075c649caffa1e7a2f28',
+    'deploy/release.json' => '8d3bafe40d57451c20f7bd11df6c9c368b3d67b1f933e9185ded7e1d8aaf01fe',
+    'deploy/telemetry.py' => 'd4535e9234b7c9799a8ec61dc5f8be78d30aa7272ad4491dfef799d1de1e3a1b',
+    'deploy/update-root.sh' => 'e3666b5a18f993c528c88d35959217ba84535555f1ecfb241f3b7ef81746afdd',
+    'module.xml' => 'd5498365ff09771fbc40ba56a42c12acc0719b20708629c69a6847111ee7b3f1',
+    'page.calllive.php' => '236640f7a52c2f5ef2c1a24cf7c70c013930432148f9083d9cbf9741b0764cba',
+);
+
+function clSignCommand(array $args, $input = '')
+{
+    $command = implode(' ', array_map('escapeshellarg', $args));
+    $fds = array(array('pipe', 'r'), array('pipe', 'w'), STDERR);
+    $process = proc_open($command, $fds, $pipes);
+    if (!is_resource($process)) {
+        throw new RuntimeException('Could not start ' . $args[0]);
+    }
+    $written = $input === '' ? 0 : fwrite($pipes[0], $input);
+    fclose($pipes[0]);
+    $output = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    if (proc_close($process) !== 0 || $written !== strlen($input) || $output === false) {
+        throw new RuntimeException('Command failed ' . $args[0]);
+    }
+    return $output;
+}
+
+function clSignDirectory($path, $mode)
+{
+    if (!file_exists($path) && !is_link($path)) {
+        if (!mkdir($path, $mode) || !chmod($path, $mode)) {
+            throw new RuntimeException('Could not create ' . $path);
+        }
+    }
+    if (is_link($path) || !is_dir($path) || fileowner($path) !== 0 || (fileperms($path) & 0022) !== 0) {
+        throw new RuntimeException('Expected a directory owned by root with group and other write permissions disabled at ' . $path);
+    }
+}
+
+function clSignManifest($key, $repo, array $hashes)
+{
+    $manifest = "[config]\nversion=2\nhash=sha256\nsignedwith=$key\nsignedby=CallLive\nrepo=$repo\ntype=local\n[hashes]\n";
+    foreach ($hashes as $file => $digest) {
+        $manifest .= "$file = $digest\n";
+    }
+    return $manifest;
+}
+
+function clSignAtomicWrite($file, $content)
+{
+    // Create the file with mode 0644 and replace the signature with an atomic rename.
+    $temp = dirname($file) . '/.calllive-sign-' . bin2hex(openssl_random_pseudo_bytes(16));
+    $mask = umask(0022);
+    try {
+        $handle = fopen($temp, 'xb');
+    } finally {
+        umask($mask);
+    }
+    if ($handle === false) {
+        throw new RuntimeException('Could not prepare ' . $file);
+    }
+    try {
+        if (fwrite($handle, $content) !== strlen($content) || !fflush($handle) || !rename($temp, $file)) {
+            throw new RuntimeException('Could not write ' . $file);
+        }
+    } finally {
+        fclose($handle);
+        if (is_file($temp)) {
+            unlink($temp);
+        }
+    }
+}
+
+try {
+    if (!is_readable('/etc/freepbx.conf')) {
+        throw new RuntimeException('The /etc/freepbx.conf file is unavailable. Run this script on the FreePBX server.');
+    }
+    $bootstrap_settings = array('freepbx_auth' => false, 'skip_astman' => true);
+    require_once '/etc/freepbx.conf';
+    if (!version_compare(getVersion(), '15.0', '>=') || version_compare(getVersion(), '16.0', '>=')) {
+        throw new RuntimeException('This script requires FreePBX 15.');
+    }
+    $config = FreePBX::Config();
+    $moduleDir = rtrim($config->get('AMPWEBROOT'), '/') . '/admin/modules/calllive';
+    if (is_link($moduleDir) || !is_dir($moduleDir)) {
+        throw new RuntimeException('Install CallLive 15.0.10 through Module Admin first.');
+    }
+    $actual = array();
+    $entries = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($moduleDir, FilesystemIterator::SKIP_DOTS));
+    foreach ($entries as $entry) {
+        $name = substr($entry->getPathname(), strlen($moduleDir) + 1);
+        if ($entry->isLink() || !$entry->isFile()) {
+            throw new RuntimeException('Expected a regular file at ' . $name);
+        }
+        if ($name !== 'module.sig') {
+            $actual[$name] = hash_file('sha256', $entry->getPathname());
+        }
+    }
+    foreach ($expected as $name => $digest) {
+        if (!isset($actual[$name]) || $actual[$name] !== $digest) {
+            throw new RuntimeException('File missing or different from CallLive 15.0.10 at ' . $name);
+        }
+    }
+    $extras = array_diff_key($actual, $expected);
+    if ($extras) {
+        throw new RuntimeException('Unexpected module files found · ' . implode(', ', array_keys($extras)));
+    }
+    echo "The installed CallLive 15.0.10 files match the published archive.\n";
+
+    $secure = '/etc/freepbx.secure';
+    clSignDirectory($secure, 0755);
+    $lock = fopen($secure . '/.calllive-sign.lock', 'c');
+    if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
+        throw new RuntimeException('CallLive signing is already running.');
+    }
+    $keyDir = $secure . '/calllive-key';
+    clSignDirectory($keyDir, 0700);
+    if ((fileperms($keyDir) & 0077) !== 0) {
+        throw new RuntimeException('The private key must be accessible only to root at ' . $keyDir);
+    }
+
+    $gpg = is_executable('/usr/bin/gpg') ? '/usr/bin/gpg' : '/usr/bin/gpg2';
+    $signer = array($gpg, '--no-options', '--homedir', $keyDir, '--batch', '--no-tty');
+    $listKeys = array_merge($signer, array('--with-colons', '--fingerprint', '--list-secret-keys'));
+    $keys = clSignCommand($listKeys);
+    if (!preg_match('/^sec:/m', $keys)) {
+        clSignCommand(array_merge($signer, array('--gen-key')), "%no-protection\nKey-Type: RSA\nKey-Length: 3072\nKey-Usage: sign\nName-Real: CallLive Local Module Signing\nExpire-Date: 0\n%commit\n");
+        $keys = clSignCommand($listKeys);
+    }
+    if (!preg_match('/^fpr:::::::::([A-F0-9]{40}):$/m', $keys, $fingerprint)) {
+        throw new RuntimeException('The CallLive key fingerprint could not be found.');
+    }
+    $key = $fingerprint[1];
+    $sign = array_merge($signer, array('--local-user', $key, '--digest-algo', 'SHA256', '--output', '-', '--clearsign'));
+    $inner = clSignCommand($sign, clSignManifest(substr($key, -16), 'manual', $expected));
+    $outer = clSignCommand($sign, clSignManifest(substr($key, -16), 'local', array('calllive.sig' => hash('sha256', $inner))));
+
+    $verifier = FreePBX::GPG();
+    $webuser = $config->get('AMPASTERISKWEBUSER');
+    $web = posix_getpwnam($webuser);
+    $ring = $verifier->getGpgLocation();
+    if (!$web || is_link($ring)) {
+        throw new RuntimeException('Could not determine the FreePBX web user GPG directory.');
+    }
+    if (fileowner($ring) === 0 && count(scandir($ring)) === 2) {
+        if (!chmod($ring, 0700) || !chgrp($ring, $web['gid']) || !chown($ring, $web['uid'])) {
+            throw new RuntimeException('Could not prepare the FreePBX GPG directory at ' . $ring);
+        }
+        clearstatcache(true, $ring);
+    }
+    if (fileowner($ring) !== $web['uid']) {
+        throw new RuntimeException('Check the owner of the FreePBX GPG directory at ' . $ring);
+    }
+    $public = clSignCommand(array_merge($signer, array('--export', $key)));
+    $asWebUser = $web['uid'] === 0 ? array() : array('/usr/sbin/runuser', '-u', $webuser, '--');
+    clSignCommand(array_merge($asWebUser, array($gpg, '--no-options', '--homedir', $ring, '--batch', '--import')), $public);
+
+    $targets = array($secure . '/calllive.sig' => $inner, $moduleDir . '/module.sig' => $outer);
+    $previous = array();
+    foreach ($targets as $file => $content) {
+        if (is_link($file) || (file_exists($file) && (!is_file($file)
+            || ($file === $secure . '/calllive.sig' && fileowner($file) !== 0)))) {
+            throw new RuntimeException('Check the signature file type and owner at ' . $file);
+        }
+        $previous[$file] = file_exists($file) ? file_get_contents($file) : null;
+        if ($previous[$file] === false) {
+            throw new RuntimeException('Could not read the previous signature at ' . $file);
+        }
+    }
+
+    $written = array();
+    try {
+        foreach ($targets as $file => $content) {
+            clSignAtomicWrite($file, $content);
+            $written[] = $file;
+            clSignCommand(array_merge($asWebUser, array('/usr/bin/test', '-r', $file)));
+        }
+        $modules = module_functions::create();
+        $result = $modules->updateSignature('calllive');
+        if ($result['status'] !== (FreePBX\GPG::STATE_GOOD | FreePBX\GPG::STATE_TRUSTED)) {
+            $details = isset($result['details']) ? ' ' . implode(' ', $result['details']) : '';
+            throw new RuntimeException('FreePBX rejected the signature.' . $details);
+        }
+    } catch (Exception $error) {
+        foreach (array_reverse($written) as $file) {
+            if ($previous[$file] === null) {
+                unlink($file);
+            } else {
+                clSignAtomicWrite($file, $previous[$file]);
+            }
+        }
+        if (isset($modules)) {
+            $modules->updateSignature('calllive');
+        }
+        throw $error;
+    }
+    echo "The CallLive local signature is valid.\n";
+    echo "Key fingerprint $key\n";
+} catch (Exception $error) {
+    fwrite(STDERR, $error->getMessage() . "\n");
+    exit(1);
+}
+
+CALLLIVE_SIGN_1510

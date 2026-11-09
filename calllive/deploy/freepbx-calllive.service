@@ -1,0 +1,24 @@
+[Unit]
+Description=FreePBX CallLive Asterisk monitor
+After=network.target asterisk.service freepbx.service
+
+[Service]
+Type=simple
+User=freepbx-calllive
+Group=asterisk
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=/etc/freepbx-calllive.env
+ExecStart=/usr/bin/python3 /opt/freepbx-calllive/collector.py
+RuntimeDirectory=freepbx-calllive
+RuntimeDirectoryMode=0750
+UMask=0027
+Restart=on-failure
+RestartSec=3s
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+RestrictAddressFamilies=AF_INET
+
+[Install]
+WantedBy=multi-user.target
