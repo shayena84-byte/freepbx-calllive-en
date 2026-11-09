@@ -42,7 +42,7 @@ Select an event to mark its time on all four charts. If measurements exist for i
 
 ## Installation
 
-Use the versioned archive from this private repository. Sign in to GitHub with an account that has access.
+Download the versioned installation package from the [CallLive 15.0.10 release](https://github.com/shayena84-byte/freepbx-calllive-en/releases/tag/v15.0.10).
 
 | File | Purpose |
 | --- | --- |
