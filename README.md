@@ -4,6 +4,8 @@
 
 **CallLive** shows live calls, trunk usage, extension states and RTP/RTCP quality in **Reports → Call Monitor**. This English edition is based on the [original CallLive 15.0.9 source](https://github.com/shayena84-byte/freepbx-calllive/tree/d88cd4dcce059bd2ff822fdcb73fd33c9db0c271).
 
+[Russian version](https://github.com/shayena84-byte/freepbx-calllive) · **English version**
+
 [Features](#features) · [Screens](#screens) · [Installation](#installation) · [Operations](#operations) · [Architecture](#architecture)
 
 **[Installation package 15.0.10](dist/15.0.10)** · **FreePBX 15 / Core** · **Tested with Asterisk 16** · **Linux / systemd / Python 3.6+**
