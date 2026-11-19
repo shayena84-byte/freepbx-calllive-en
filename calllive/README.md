@@ -1,6 +1,6 @@
-# CallLive 15.0.11 for FreePBX 15
+# CallLive 15.0.10 for FreePBX 15
 
-**Reports → Call Monitor** shows active calls, trunks, extension states and call quality. Saved records remain available after hangup. Select an event in the timeline to mark its timestamp on the four quality charts. Version 15.0.11 uses `visibilitychange` to reduce background polling and refresh immediately when the tab becomes visible.
+**Reports → Call Monitor** shows active calls, trunks, extension states and call quality. Saved records remain available after hangup. Select an event in the timeline to mark its timestamp on the four quality charts.
 
 ## Requirements
 
@@ -9,15 +9,13 @@
 - Asterisk supplies RTP/RTCP measurements for supported SIP and PJSIP audio channels. Direct media can make measurements unavailable at the PBX.
 - Off-hook state appears when the PBX receives an OffHook indication.
 
-The collector uses the Python standard library. Module **15.0.11** works with collector **15.0.8**, including installations of the original CallLive edition.
-
-The collector runs under systemd and is independent of the browser tab. While the tab is hidden, the UI polls the live snapshot every 15 seconds, active call details every 15 seconds and extension or trunk details every 30 seconds. The visible intervals are 1, 5 and 10 seconds. Returning to the tab triggers an immediate request without starting parallel polling loops.
+The collector uses the Python standard library. Module **15.0.10** works with collector **15.0.8**, including installations of the original CallLive edition.
 
 ## Install or upgrade
 
-1. Back up the PBX before updating a production installation. Download the [15.0.11 package](https://github.com/shayena84-byte/freepbx-calllive-en/tree/main/dist/15.0.11).
-2. Upload `freepbx15-calllive-en-15.0.11.tar.gz` in **Admin → Module Admin → Upload Module**. Select **Call Monitor → Install or Upgrade → Process → Confirm**.
-3. Paste the complete `calllive-15.0.11-sign-root-command.txt` file into a root shell on the PBX. After the signature is valid, select **Apply Config**.
+1. Back up the PBX before updating a production installation. Download the [15.0.10 package](https://github.com/shayena84-byte/freepbx-calllive-en/tree/main/dist/15.0.10).
+2. Upload `freepbx15-calllive-en-15.0.10.tar.gz` in **Admin → Module Admin → Upload Module**. Select **Call Monitor → Install or Upgrade → Process → Confirm**.
+3. Paste the complete `calllive-15.0.10-sign-root-command.txt` file into a root shell on the PBX. After the signature is valid, select **Apply Config**.
 4. On a first installation or with an older collector, run the setup command in **Reports → Call Monitor → Diagnostics** as root. With the default FreePBX web root, use the command below.
 
    ```bash
@@ -152,7 +150,7 @@ Use the signing file for the installed version. It verifies the set and SHA-256 
 If you copied the standalone PHP file to the server, run it as root.
 
 ```bash
-php /root/calllive-15.0.11-sign-local.php
+php /root/calllive-15.0.10-sign-local.php
 ```
 
 The private key is stored under `/etc/freepbx.secure/calllive-key` with root-only access. FreePBX imports the public key into its own keyring. This is a system-specific signature. If local files differ from the published archive, reinstall the exact archive before signing.
@@ -166,7 +164,7 @@ The private key is stored under `/etc/freepbx.secure/calllive-key` with root-onl
 | AMI rejected the request | The `reporting` permission and CoreShowChannels, BridgeList and ExtensionStateList actions |
 | History cannot be saved | Free space, permissions on `/var/lib/freepbx-calllive`, and archive capacity |
 | Transfer or queue events are missing | `read=call,agent` and the AMI event filter |
-| Collector update or service check required | Module 15.0.11 expects collector 15.0.8 |
+| Collector update or service check required | Module 15.0.10 expects collector 15.0.8 |
 | Signature warning | Use the signing file for the exact installed archive and check the verification message |
 
 A custom deployment should use the correct web-process group and service account. Existing drop-ins can be inspected with `systemctl cat freepbx-calllive.service` and managed with `systemctl edit freepbx-calllive.service`.

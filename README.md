@@ -8,7 +8,7 @@
 
 [Features](#features) · [Screens](#screens) · [Installation](#installation) · [Operations](#operations) · [Architecture](#architecture)
 
-**[Installation package 15.0.11](dist/15.0.11)** · **FreePBX 15 / Core** · **Tested with Asterisk 16** · **Linux / systemd / Python 3.6+**
+**[Installation package 15.0.10](dist/15.0.10)** · **FreePBX 15 / Core** · **Tested with Asterisk 16** · **Linux / systemd / Python 3.6+**
 
 ## Features
 
@@ -21,8 +21,6 @@
 | **Diagnostics** | Module and collector compatibility, AMI status, snapshot age and history storage. Full administrators can adjust alert thresholds and copy the collector setup command. |
 
 Select a trunk or extension for its details. Depending on the PBX configuration, extensions can show DND, forwarding, Follow Me, devices and registration. Persistent quality, packet loss and wait conditions trigger alerts in the open dashboard.
-
-Version 15.0.11 reacts to browser tab visibility. It reduces polling while the page is in the background, then immediately synchronizes live calls and open detail views when the user returns. The PBX collector continues independently and does not lose call history.
 
 ## Screens
 
@@ -44,19 +42,19 @@ Select an event to mark its time on all four charts. If measurements exist for i
 
 ## Installation
 
-Download the versioned installation package from the [CallLive 15.0.11 release](https://github.com/shayena84-byte/freepbx-calllive-en/releases/tag/v15.0.11).
+Use the versioned archive from this private repository. Sign in to GitHub with an account that has access.
 
 | File | Purpose |
 | --- | --- |
-| [freepbx15-calllive-en-15.0.11.tar.gz](dist/15.0.11/freepbx15-calllive-en-15.0.11.tar.gz) | Upload this archive in FreePBX Module Admin |
-| [calllive-15.0.11-sign-root-command.txt](dist/15.0.11/calllive-15.0.11-sign-root-command.txt) | Paste this entire file into the PBX root shell to apply a local signature |
-| [calllive-15.0.11-sign-local.php](dist/15.0.11/calllive-15.0.11-sign-local.php) | The same signing code as a standalone PHP CLI file |
-| [calllive-15.0.11-update-root-command.txt](dist/15.0.11/calllive-15.0.11-update-root-command.txt) | Collector setup or upgrade with FreePBX web-root detection |
-| [SHA256SUMS.txt](dist/15.0.11/SHA256SUMS.txt) | Checksums for the installation files |
+| [freepbx15-calllive-en-15.0.10.tar.gz](dist/15.0.10/freepbx15-calllive-en-15.0.10.tar.gz) | Upload this archive in FreePBX Module Admin |
+| [calllive-15.0.10-sign-root-command.txt](dist/15.0.10/calllive-15.0.10-sign-root-command.txt) | Paste this entire file into the PBX root shell to apply a local signature |
+| [calllive-15.0.10-sign-local.php](dist/15.0.10/calllive-15.0.10-sign-local.php) | The same signing code as a standalone PHP CLI file |
+| [calllive-15.0.10-update-root-command.txt](dist/15.0.10/calllive-15.0.10-update-root-command.txt) | Collector setup or upgrade with FreePBX web-root detection |
+| [SHA256SUMS.txt](dist/15.0.10/SHA256SUMS.txt) | Checksums for the installation files |
 
 1. Back up the PBX before upgrading. Upload the archive through **Admin → Module Admin → Upload Module**. In **Local Module Administration**, choose **Call Monitor → Install or Upgrade → Process → Confirm**.
 2. Run the local signing command as root. Wait for **The CallLive local signature is valid**, then select **Apply Config**.
-3. A running collector **15.0.8** is compatible with module **15.0.11**. For a first installation or an older collector, run the command below as root.
+3. A running collector **15.0.8** is compatible with module **15.0.10**. For a first installation or an older collector, run the command below as root.
 
    ```bash
    bash /var/www/html/admin/modules/calllive/deploy/update-root.sh
@@ -64,7 +62,7 @@ Download the versioned installation package from the [CallLive 15.0.11 release](
 
    For a custom FreePBX web root, use the command in **Diagnostics** or the setup file in the table.
 
-4. Open **Reports → Call Monitor → Diagnostics**. Verify module **15.0.11**, collector **15.0.8**, **Collector is compatible** and history access. Place a test call, then open it in **History**.
+4. Open **Reports → Call Monitor → Diagnostics**. Verify module **15.0.10**, collector **15.0.8**, **Collector is compatible** and history access. Place a test call, then open it in **History**.
 
 ## Operations
 
@@ -93,6 +91,6 @@ The systemd collector connects to local AMI and writes snapshots and call record
 | [Operations](docs/OPERATIONS.md) | Installation, upgrades, backups, rollback, access and signing |
 | [Module manual](calllive/README.md) | Requirements, AMI setup, retention, quality scoring and troubleshooting |
 | [Architecture](docs/ARCHITECTURE.md) | Data flow, source files, storage and web API |
-| [15.0.11 validation](docs/VALIDATION_15.0.11.md) | Background polling, tab return, package checks and collector compatibility |
+| [15.0.10 validation](docs/VALIDATION_15.0.10.md) | Upgrade from 15.0.9, signature verification and collector compatibility |
 
 [GPLv3 or later](LICENSE).
