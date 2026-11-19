@@ -63,6 +63,30 @@
     let accessEpoch = 0;
     let pbxDatesInitialized = false;
 
+    const pollDelays = {
+        snapshot: {visible: 1000, hidden: 15000},
+        entity: {visible: 10000, hidden: 30000},
+        record: {visible: 5000, hidden: 15000},
+    };
+    let refreshTimer = null;
+    let refreshInFlight = false;
+    let refreshAfterCurrent = false;
+    let refreshStopped = false;
+
+    function pagePollDelay(kind) {
+        const state = document.visibilityState === 'hidden' ? 'hidden' : 'visible';
+        return pollDelays[kind][state];
+    }
+
+    function scheduleRefresh(delay = pagePollDelay('snapshot')) {
+        if (refreshStopped) return;
+        if (refreshTimer !== null) window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(() => {
+            refreshTimer = null;
+            refresh();
+        }, delay);
+    }
+
     function node(tag, value = '', className = '') {
         const element = document.createElement(tag);
         element.textContent = value;
@@ -613,7 +637,7 @@
             window.clearTimeout(timer);
             if (entityRequest === controller) entityRequest = null;
             if (selection === selectedEntity) {
-                entityTimer = window.setTimeout(() => refreshEntity(selection), 10000);
+                entityTimer = window.setTimeout(() => refreshEntity(selection), pagePollDelay('entity'));
             }
         }
     }
@@ -779,6 +803,13 @@
     }
 
     async function refresh() {
+        if (refreshStopped) return;
+        if (refreshInFlight) {
+            refreshAfterCurrent = true;
+            return;
+        }
+
+        refreshInFlight = true;
         let stop = false;
         const controller = new AbortController();
         const timer = window.setTimeout(() => controller.abort(), 4500);
@@ -791,6 +822,7 @@
             });
             if (response.status === 401 || response.status === 403) {
                 stop = true;
+                refreshStopped = true;
                 snapshot = null;
                 paint({state: 'access_denied'});
                 return;
@@ -810,7 +842,15 @@
             paint({state: 'request_error'});
         } finally {
             window.clearTimeout(timer);
-            if (!stop) window.setTimeout(refresh, 1000);
+            refreshInFlight = false;
+            if (stop) {
+                if (refreshTimer !== null) window.clearTimeout(refreshTimer);
+                refreshTimer = null;
+                return;
+            }
+            const delay = refreshAfterCurrent ? 0 : pagePollDelay('snapshot');
+            refreshAfterCurrent = false;
+            scheduleRefresh(delay);
         }
     }
 
@@ -984,7 +1024,7 @@
         } finally {
             window.clearTimeout(timer);
             if (recordRequest === controller) recordRequest = null;
-            if (!finished && selection === recordSelection) recordTimer = window.setTimeout(() => refreshRecord(selection), 5000);
+            if (!finished && selection === recordSelection) recordTimer = window.setTimeout(() => refreshRecord(selection), pagePollDelay('record'));
         }
     }
 
@@ -1391,6 +1431,34 @@
             field.focus(); field.select();
             byId('cl-settings-status').textContent = 'The command is selected. Press Ctrl+C to copy it.';
         }
+    });
+
+    function rescheduleDetailPolling(immediate) {
+        if (selectedEntity && !entityRequest) {
+            const selection = selectedEntity;
+            if (entityTimer !== null) window.clearTimeout(entityTimer);
+            entityTimer = null;
+            if (immediate) refreshEntity(selection);
+            else entityTimer = window.setTimeout(() => refreshEntity(selection), pagePollDelay('entity'));
+        }
+
+        const activeRecord = recordSelection && (!shownRecord || shownRecord.status === 'active');
+        if (activeRecord && !recordRequest) {
+            const selection = recordSelection;
+            if (recordTimer !== null) window.clearTimeout(recordTimer);
+            recordTimer = null;
+            if (immediate) refreshRecord(selection);
+            else recordTimer = window.setTimeout(() => refreshRecord(selection), pagePollDelay('record'));
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        const visible = document.visibilityState === 'visible';
+        if (!refreshStopped) {
+            refreshAfterCurrent = visible && refreshInFlight;
+            if (!refreshInFlight) scheduleRefresh(visible ? 0 : pagePollDelay('snapshot'));
+        }
+        rescheduleDetailPolling(visible);
     });
 
     refresh();
