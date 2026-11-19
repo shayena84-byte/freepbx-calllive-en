@@ -2,7 +2,7 @@
 <module>
     <rawname>calllive</rawname>
     <name>Call Monitor</name>
-    <version>15.0.10</version>
+    <version>15.0.11</version>
     <publisher>CallLive</publisher>
     <license>GPLv3+</license>
     <licenselink>https://www.gnu.org/licenses/gpl-3.0.html</licenselink>
